@@ -1,0 +1,10 @@
+.git/
+.gitignore
+.dockerignore
+.eslintrc.js
+Dockerfile
+docker-compose.yml
+LICENSE
+config
+node_modules/
+README.md

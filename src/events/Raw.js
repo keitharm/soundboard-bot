@@ -1,0 +1,37 @@
+const utils = require('../lib/utils');
+
+module.exports = (client) => async (packet) => {
+  const { playSound, deleteSound } = utils(client);
+
+  // Play sound for reactions
+  if (['MESSAGE_REACTION_ADD', 'MESSAGE_REACTION_REMOVE'].includes(packet.t)) {
+    const user = await client.users.fetch(packet.d.user_id);
+
+    // Ignore bots
+    if (user.bot) return;
+
+    // Stop current soundboard request
+    if (packet.d.emoji.name === '❌' && packet.d.message_id === client.guildMapping.get(packet.d.guild_id).welcome) {
+      return client.player.stop();
+    }
+
+    // Restart soundboard
+    if (packet.d.emoji.name === '🔄' && packet.d.message_id === client.guildMapping.get(packet.d.guild_id).welcome) {
+      client.vc?.disconnect();
+      client.vc = null;
+      return;
+    }
+
+    await playSound(client, {
+      messageId: packet.d.message_id,
+      guildId: packet.d.guild_id,
+      userId: packet.d.user_id,
+      username: user.username,
+    });
+
+  // Check if deleted a soundboard message
+  } else if (packet.t === 'MESSAGE_DELETE') {
+    const soundMsgId = client.soundMapping.get(packet.d.id);
+    if (soundMsgId) await deleteSound(client, soundMsgId);
+  }
+};

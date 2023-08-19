@@ -1,0 +1,51 @@
+services:
+  soundboard-bot:
+    image: ghcr.io/keitharm/soundboard-bot:latest
+    restart: unless-stopped
+    environment:
+      DISCORD_TOKEN: 
+      DISCORD_CLIENT_ID: 
+      MARIADB_DATABASE: soundboard-bot
+      MARIADB_USER: soundboard-bot
+      MARIADB_PASSWORD: my_cool_secret
+    depends_on:
+      - db
+    networks:
+      - soundboard-bot
+    volumes:
+      - ./sounds:/app/sounds
+
+  db:
+    image: mariadb
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: soundboard-bot
+      MARIADB_USER: soundboard-bot
+      MARIADB_PASSWORD: my_cool_secret
+      MARIADB_ROOT_PASSWORD: my-secret-pw
+      TZ: America/Chicago
+    networks:
+      - soundboard-bot
+    volumes:
+      - db:/var/lib/mysql
+      - ./config/mariadb:/docker-entrypoint-initdb.d
+
+  phpmyadmin:
+    image: phpmyadmin
+    restart: unless-stopped
+    ports:
+      - 8080:80
+    environment:
+      - PMA_ARBITRARY=1
+    depends_on:
+      - db
+    networks:
+      - soundboard-bot
+
+networks:
+  soundboard-bot:
+    name: soundboard-bot
+
+volumes:
+  db:
+    name: soundboard-bot-db
