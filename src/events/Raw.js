@@ -22,6 +22,8 @@ module.exports = (client) => async (packet) => {
       return;
     }
 
+    if (!client.soundMapping.get(packet.d.message_id)) return;
+
     await playSound(client, {
       messageId: packet.d.message_id,
       guildId: packet.d.guild_id,

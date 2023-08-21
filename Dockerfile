@@ -32,10 +32,9 @@ CMD ["nodemon", "."]
 FROM base AS release
 ENV NODE_ENV=production
 LABEL org.opencontainers.image.source https://github.com/keitharm/soundboard-bot
-COPY --chown=node . .
-RUN rm -rf ./test package-lock.json .eslintrc.json
 
 COPY --chown=node --from=deps /app/node_modules ./node_modules
-
+COPY --chown=node . .
+RUN rm -rf ./test package-lock.json .eslintrc.json
 USER node
 CMD ["node", "./src/index.js"]
