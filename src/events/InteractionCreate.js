@@ -2,8 +2,23 @@ module.exports = (client) => async (interaction) => {
   const guildName = client.guilds.resolve(interaction.guildId).name;
   const { username } = interaction.user;
 
+  if (interaction.isAutocomplete()) {
+    const command = interaction.client.commands.get(interaction.commandName);
+
+    if (!command) {
+      console.error(`No command matching ${interaction.commandName} was found.`);
+      return;
+    }
+
+    try {
+      await command.autocomplete(interaction);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
   if (!interaction.isChatInputCommand()) return;
-  client.log(`[${username}] Ran command ${interaction.commandName} in guild ${guildName}`);
+  client.log(`[${username}][${guildName}] Ran command ${interaction.commandName}.`);
 
   const command = client.commands.get(interaction.commandName);
   if (!command) return;

@@ -30,22 +30,25 @@ module.exports = (client) => async (msg) => {
 
     // Post new message into soundboard channel and save to db
     const soundMsg = await (await msg.guild.channels.fetch(client.guildMapping.get(guildId).soundboard)).send(name);
-    const res = await client.conn.query('INSERT INTO sound (guild_id, message_id, author, name, src) VALUES (?, ?, ?, ?, ?) RETURNING id', [
+    const conn = await client.db.getConnection();
+    const res = await conn.query('INSERT INTO sound (guild_id, message_id, author, name, src) VALUES (?, ?, ?, ?, ?) RETURNING id', [
       client.guildMapping.get(guildId).id,
       soundMsg.id,
-      client.userMapping.get(userId),
+      client.userMapping.get(userId).id,
       name,
       sound,
     ]);
+    conn.release();
+
+    client.log(`[${client.userMapping.get(userId).username}][${client.guildMapping.get(guildId).name}] Added sound ${name}.`);
 
     // Add sound to soundMapping
-    client.soundMapping.set(soundMsg.id, res[0].id);
+    client.soundMapping.set(soundMsg.id, { id: res[0].id, name });
 
     // Download and save file
     const response = await fetch(sound);
     await streamPipeline(response.body, createWriteStream(path.join(__dirname, '..', '..', 'sounds', `${res[0].id}.mp3`)));
     await soundMsg.react('🔈');
+    await msg.channel.send(`Added \`${name}\` to <#${client.guildMapping.get(guildId).soundboard}> successfully!`);
   }
-
-  await msg.channel.send(`Added \`${name}\` to <#${client.guildMapping.get(guildId).soundboard}> successfully!`);
 };

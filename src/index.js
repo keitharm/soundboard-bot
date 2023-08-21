@@ -34,21 +34,19 @@ if (DEPLOY) {
   client.on(Events.ClientReady, async () => {
     // Attempt to exit gracefully when Discord.js throws the random error it sometimes does
     process.on('uncaughtException', async (err) => {
-      console.log(`Caught exception: ${err}`);
-      console.log(err.stack);
-      client.conn.release();
+      client.log(`Caught exception: ${err}`);
+      client.log(err.stack);
       process.exit();
     });
 
     process.on('SIGTERM', async () => {
       client.log('Caught interrupt signal');
-      client.conn.release();
       process.exit();
     });
 
     await setup(client);
     await finish();
-    console.log('Ready!');
+    client.log('Ready!');
   });
 
   async function finish() {

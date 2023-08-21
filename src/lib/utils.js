@@ -18,19 +18,22 @@ const db = mariadb.createPool({
 
 module.exports = (client) => {
   function log() {
-    return (msg, debug = false) => {
-      const blacklisted = false;
-      if (!blacklisted) {
-        console.log(`[${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })}] ${debug ? '[DEBUG] ' : ''}${msg}`);
-      }
+    return (msg) => {
+      console.log(`[${new Date().toLocaleString('en-US', { timeZone: 'America/Chicago' })}] ${msg}`);
     };
   }
 
   async function checkUser(userId, username) {
     // Add user to db if not in mapping
     if (!client.userMapping.has(userId)) {
-      const res = await client.conn.query('INSERT INTO user (discord_id, username) VALUES (?, ?) RETURNING id', [userId, username]);
-      client.userMapping.set(userId, res[0].id);
+      const conn = await client.db.getConnection();
+      const res = await conn.query('INSERT INTO user (discord_id, username) VALUES (?, ?) RETURNING id', [userId, username]);
+      client.userMapping.set(userId, {
+        id: res[0].id,
+        username,
+      });
+      conn.release();
+      client.log(`[${username}] Added user.`);
     }
   }
 
@@ -45,15 +48,16 @@ module.exports = (client) => {
     // Connect/reconnect to vc
     await reconnectVc(userId, guildId);
 
-    const resource = createAudioResource(path.join(__dirname, '..', '..', 'sounds', `${client.soundMapping.get(messageId)}.mp3`));
+    const resource = createAudioResource(path.join(__dirname, '..', '..', 'sounds', `${client.soundMapping.get(messageId).id}.mp3`));
     client.player.get(guildId).play(resource);
+    client.log(`[${client.userMapping.get(userId).username}][${client.guildMapping.get(guildId).name}] Played sound ${client.soundMapping.get(messageId).name}.`);
 
     // Push to history array
     client.history.push([
       Date.now().toString().slice(0, -3),
       client.guildMapping.get(guildId).id,
-      client.soundMapping.get(messageId),
-      client.userMapping.get(userId),
+      client.soundMapping.get(messageId).id,
+      client.userMapping.get(userId).id,
     ]);
 
     // Start disconnect timeout after 15 minutes of no soundboard activity
@@ -81,23 +85,30 @@ module.exports = (client) => {
       if (!client.player.has(guildId)) client.player.set(guildId, createAudioPlayer());
       client.vc.get(guildId).subscribe(client.player.get(guildId));
     } else {
-      throw new Error('Please join a voice channel before playing a soundboard.');
+      throw new Error('User was not in voice channel - ignoring play request.');
     }
   }
 
-  async function deleteSound(client, messageId) {
+  async function deleteSound(client, soundMsgId) {
+    const sound = client.soundMapping.get(soundMsgId);
+    const conn = await client.db.getConnection();
+
     // Delete sound file
-    await fs.unlink(path.join(__dirname, '..', '..', 'sounds', `${messageId}.mp3`));
+    await fs.unlink(path.join(__dirname, '..', '..', 'sounds', `${sound.id}.mp3`));
 
     // Remove entry from db and soundMapping
-    await client.conn.query('DELETE FROM sound WHERE id = ?', [messageId]);
-    client.soundMapping.delete(messageId);
+    await conn.query('DELETE FROM sound WHERE id = ?', [sound.id]);
+    client.soundMapping.delete(soundMsgId);
+    conn.release();
+    client.log(`Deleted sound ${sound.name} (${sound.id}).`);
   }
 
   async function syncHistory() {
+    const conn = await client.db.getConnection();
     await Promise.all(client.history.map(async (history) => {
-      await client.conn.query('INSERT INTO history (timestamp, guild_id, sound_id, user_id) VALUES (FROM_UNIXTIME(?), ?, ?, ?)', history);
+      await conn.query('INSERT INTO history (timestamp, guild_id, sound_id, user_id) VALUES (FROM_UNIXTIME(?), ?, ?, ?)', history);
     }));
+    conn.release();
     client.history = [];
   }
 

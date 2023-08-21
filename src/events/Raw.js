@@ -22,7 +22,7 @@ module.exports = (client) => async (packet) => {
       return;
     }
 
-    if (!client.soundMapping.get(packet.d.message_id)) return;
+    if (!client.soundMapping.has(packet.d.message_id)) return;
 
     await playSound(client, {
       messageId: packet.d.message_id,
@@ -33,7 +33,7 @@ module.exports = (client) => async (packet) => {
 
   // Check if deleted a soundboard message
   } else if (packet.t === 'MESSAGE_DELETE') {
-    const soundMsgId = client.soundMapping.get(packet.d.id);
-    if (soundMsgId) await deleteSound(client, soundMsgId);
+    const validSound = client.soundMapping.has(packet.d.id);
+    if (validSound) await deleteSound(client, packet.d.id);
   }
 };

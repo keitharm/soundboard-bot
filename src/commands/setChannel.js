@@ -52,18 +52,21 @@ If you want to upload a sound file for use in another command (e.g. replacing a 
     }
     await interaction.editReply(`Set Soundboard channel to <#${channel.id}>. ${!oldThread ? `Created new <#${thread.id}> thread in channel for adding new soundboards.` : `Skipped thread creation since <#${thread.id}> already exists.`}`);
 
-    await client.conn.query('UPDATE guild SET soundboard_channel = ?, upload_channel = ?, welcome_message = ? WHERE discord_id = ?', [
+    const conn = await client.db.getConnection();
+    await conn.query('UPDATE guild SET soundboard_channel = ?, upload_channel = ?, welcome_message = ? WHERE discord_id = ?', [
       channel.id,
       thread.id,
       welcomeMsg.id,
       interaction.guildId,
     ]);
+    conn.release();
 
     client.guildMapping.set(interaction.guildId, {
       soundboard: channel.id,
       upload: thread.id,
       welcome: welcomeMsg.id,
       id: client.guildMapping.get(interaction.guildId).id,
+      name: client.guildMapping.get(interaction.guildId).name,
     });
   },
 });
