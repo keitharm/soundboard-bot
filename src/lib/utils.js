@@ -1,7 +1,7 @@
 const fs = require('fs/promises');
 const path = require('path');
 const mariadb = require('mariadb');
-const { joinVoiceChannel, createAudioResource } = require('@discordjs/voice');
+const { joinVoiceChannel, createAudioResource, createAudioPlayer } = require('@discordjs/voice');
 
 const {
   MARIADB_DATABASE,
@@ -37,14 +37,16 @@ module.exports = (client) => {
   async function playSound(client, {
     messageId, guildId, userId, username,
   }) {
+    clearTimeout(client.timeout.get(guildId));
+
     // Add user to db if not in mapping
     await checkUser(userId, username);
 
-    clearTimeout(client.timeout);
+    // Connect/reconnect to vc
     await reconnectVc(userId, guildId);
 
-    client.resource = createAudioResource(path.join(__dirname, '..', '..', 'sounds', `${client.soundMapping.get(messageId)}.mp3`));
-    client.player.play(client.resource);
+    const resource = createAudioResource(path.join(__dirname, '..', '..', 'sounds', `${client.soundMapping.get(messageId)}.mp3`));
+    client.player.get(guildId).play(resource);
 
     // Push to history array
     client.history.push([
@@ -54,29 +56,30 @@ module.exports = (client) => {
       client.userMapping.get(userId),
     ]);
 
-    // Start disconnect timeout after 1 minute of no soundboard activity
-    client.timeout = setTimeout(() => {
-      client.vc?.disconnect();
-      client.vc = null;
-    }, 60000);
+    // Start disconnect timeout after 15 minutes of no soundboard activity
+    client.timeout.set(guildId, setTimeout(() => {
+      client.vc.get(guildId)?.disconnect();
+      client.vc.set(guildId, null);
+    }, 900000));
   }
 
   async function reconnectVc(userId, guildId) {
     // eslint-disable-next-line no-underscore-dangle
-    if (client.vc?._state?.status === 'disconnected') return client.vc.rejoin();
+    if (client.vc.get(guildId)?._state?.status === 'disconnected') return client.vc.get(guildId).rejoin();
 
     // Get VC user making sound
     const rawvc = client.guilds.resolve(guildId).voiceStates.cache.find((i) => i.id === userId);
     if (rawvc && rawvc.channelId) {
       const channel = await client.channels.fetch(rawvc.channelId);
-      client.vc = joinVoiceChannel({
+      client.vc.set(guildId, joinVoiceChannel({
         channelId: channel.id,
         guildId: channel.guild.id,
         adapterCreator: channel.guild.voiceAdapterCreator,
         selfDeaf: false,
-      });
+      }));
 
-      client.vc.subscribe(client.player);
+      if (!client.player.has(guildId)) client.player.set(guildId, createAudioPlayer());
+      client.vc.get(guildId).subscribe(client.player.get(guildId));
     } else {
       throw new Error('Please join a voice channel before playing a soundboard.');
     }

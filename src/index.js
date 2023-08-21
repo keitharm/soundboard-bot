@@ -1,5 +1,3 @@
-// https://discord.com/api/oauth2/authorize?client_id=1142497254725398709&permissions=360813953088&scope=bot
-// 1142534694878060624
 const fs = require('fs');
 const path = require('path');
 const {
@@ -7,11 +5,18 @@ const {
   GatewayIntentBits, Partials,
 } = require('discord.js');
 const setup = require('./lib/setup');
+const deployCommands = require('./lib/deployCommands');
 
 const {
   DISCORD_TOKEN,
+  DISCORD_CLIENT_ID,
+  DEPLOY = false,
 } = process.env;
-if (!DISCORD_TOKEN) process.exit('Discord Bot token (token) missing');
+if (!DISCORD_TOKEN) process.exit('Discord Bot token missing');
+if (DEPLOY) {
+  if (!DISCORD_CLIENT_ID) process.exit('Discord client id missing');
+  deployCommands();
+}
 
 (async () => {
   const client = new Client({

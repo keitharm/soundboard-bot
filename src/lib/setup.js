@@ -1,4 +1,3 @@
-const { createAudioPlayer } = require('@discordjs/voice');
 const { CronJob } = require('cron');
 const { version } = require('../../package.json');
 const utils = require('./utils');
@@ -6,10 +5,9 @@ const utils = require('./utils');
 module.exports = async (client) => {
   const { log, db, syncHistory } = utils(client);
 
-  client.vc = null;
-  client.timeout = null;
-  client.player = createAudioPlayer();
-  client.resource = null;
+  client.vc = new Map();
+  client.player = new Map();
+  client.timeout = new Map();
   client.db = db;
   client.conn = await db.getConnection();
   client.log = log();

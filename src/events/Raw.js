@@ -12,13 +12,13 @@ module.exports = (client) => async (packet) => {
 
     // Stop current soundboard request
     if (packet.d.emoji.name === '❌' && packet.d.message_id === client.guildMapping.get(packet.d.guild_id).welcome) {
-      return client.player.stop();
+      return client.player.get(packet.d.guild_id)?.stop();
     }
 
     // Restart soundboard
     if (packet.d.emoji.name === '🔄' && packet.d.message_id === client.guildMapping.get(packet.d.guild_id).welcome) {
-      client.vc?.disconnect();
-      client.vc = null;
+      client.vc.get(packet.d.guild_id)?.disconnect();
+      client.vc.set(packet.d.guild_id, null);
       return;
     }
 
