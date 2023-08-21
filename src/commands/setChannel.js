@@ -53,7 +53,7 @@ If you want to upload a sound file for use in another command (e.g. replacing a 
     await interaction.editReply(`Set Soundboard channel to <#${channel.id}>. ${!oldThread ? `Created new <#${thread.id}> thread in channel for adding new soundboards.` : `Skipped thread creation since <#${thread.id}> already exists.`}`);
 
     const conn = await client.db.getConnection();
-    await conn.query('UPDATE guild SET soundboard_channel = ?, upload_channel = ?, welcome_message = ? WHERE discord_id = ?', [
+    await conn.query('UPDATE guild SET soundboard_channel = ?, upload_thread = ?, welcome_message = ? WHERE discord_id = ?', [
       channel.id,
       thread.id,
       welcomeMsg.id,

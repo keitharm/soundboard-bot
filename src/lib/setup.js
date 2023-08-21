@@ -19,13 +19,13 @@ module.exports = async (client) => {
 
   client.log('Loading guildMapping');
   const conn = await db.getConnection();
-  const guilds = await conn.query('SELECT id, name, discord_id, soundboard_channel, upload_channel, welcome_message FROM guild');
+  const guilds = await conn.query('SELECT id, name, discord_id, soundboard_channel, upload_thread, welcome_message FROM guild');
   guilds.forEach((guild) => {
     client.guildMapping.set(guild.discord_id, {
       id: guild.id,
       name: guild.name,
       soundboard: guild.soundboard_channel,
-      upload: guild.upload_channel,
+      upload: guild.upload_thread,
       welcome: guild.welcome_message,
     });
   });

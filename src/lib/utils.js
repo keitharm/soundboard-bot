@@ -100,7 +100,7 @@ module.exports = (client) => {
     await conn.query('DELETE FROM sound WHERE id = ?', [sound.id]);
     client.soundMapping.delete(soundMsgId);
     conn.release();
-    client.log(`Deleted sound ${sound.name} (${sound.id}).`);
+    client.log(`Deleted sound ${sound.name}.`);
   }
 
   async function syncHistory() {

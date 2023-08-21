@@ -33,7 +33,7 @@ CREATE TABLE `guild` (
   `name` varchar(100) NOT NULL,
   `join_date` timestamp NOT NULL DEFAULT current_timestamp(),
   `soundboard_channel` varchar(20) DEFAULT NULL,
-  `upload_channel` varchar(20) DEFAULT NULL,
+  `upload_thread` varchar(20) DEFAULT NULL,
   `welcome_message` varchar(20) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -61,7 +61,7 @@ CREATE TABLE `sound` (
   `id` int(11) NOT NULL,
   `guild_id` int(11) NOT NULL,
   `message_id` varchar(20) NOT NULL,
-  `author` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
   `name` varchar(64) NOT NULL,
   `src` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -89,7 +89,7 @@ ALTER TABLE `guild`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `discord_id` (`discord_id`),
   ADD UNIQUE KEY `welcome_message` (`welcome_message`),
-  ADD UNIQUE KEY `upload_channel` (`upload_channel`),
+  ADD UNIQUE KEY `upload_thread` (`upload_thread`),
   ADD UNIQUE KEY `soundboard_channel` (`soundboard_channel`);
 
 --
@@ -108,7 +108,7 @@ ALTER TABLE `sound`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `message_id` (`message_id`),
   ADD KEY `guild_id` (`guild_id`),
-  ADD KEY `author` (`author`);
+  ADD KEY `user_id` (`user_id`);
 
 --
 -- Indexes for table `user`
@@ -163,7 +163,7 @@ ALTER TABLE `history`
 --
 ALTER TABLE `sound`
   ADD CONSTRAINT `sound_ibfk_1` FOREIGN KEY (`guild_id`) REFERENCES `guild` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `sound_ibfk_2` FOREIGN KEY (`author`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+  ADD CONSTRAINT `sound_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

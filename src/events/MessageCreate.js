@@ -18,7 +18,7 @@ module.exports = (client) => async (msg) => {
   const { id: userId, username } = msg.author;
 
   // No attachments
-  if (!sound) return msg.channel.send('No sound file provided.');
+  if (!sound) return;
 
   // Add user to db if not in mapping
   await checkUser(userId, username);
@@ -31,7 +31,7 @@ module.exports = (client) => async (msg) => {
     // Post new message into soundboard channel and save to db
     const soundMsg = await (await msg.guild.channels.fetch(client.guildMapping.get(guildId).soundboard)).send(name);
     const conn = await client.db.getConnection();
-    const res = await conn.query('INSERT INTO sound (guild_id, message_id, author, name, src) VALUES (?, ?, ?, ?, ?) RETURNING id', [
+    const res = await conn.query('INSERT INTO sound (guild_id, message_id, user_id, name, src) VALUES (?, ?, ?, ?, ?) RETURNING id', [
       client.guildMapping.get(guildId).id,
       soundMsg.id,
       client.userMapping.get(userId).id,
