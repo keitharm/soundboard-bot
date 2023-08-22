@@ -3,7 +3,7 @@ const { SlashCommandBuilder } = require('discord.js');
 module.exports = (client) => ({
   data: new SlashCommandBuilder()
     .setName('stop')
-    .setDescription('Stop the current soundboard.'),
+    .setDescription('Stop the current soundboard'),
 
   async execute(interaction) {
     const { guildId } = interaction;

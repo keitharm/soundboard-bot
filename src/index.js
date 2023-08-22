@@ -10,15 +10,18 @@ const deployCommands = require('./lib/deployCommands');
 const {
   DISCORD_TOKEN,
   DISCORD_CLIENT_ID,
-  DEPLOY = false,
+  MODE = 'standard',
 } = process.env;
 if (!DISCORD_TOKEN) process.exit('Discord Bot token missing');
-if (DEPLOY) {
-  if (!DISCORD_CLIENT_ID) process.exit('Discord client id missing');
-  deployCommands();
-}
 
 (async () => {
+  if (MODE === 'deploy') {
+    if (!DISCORD_CLIENT_ID) process.exit('Discord client id missing');
+    await deployCommands();
+    console.log('Application commands refreshed, please restart the app with mode unset from \'deploy\'.');
+    return;
+  }
+
   const client = new Client({
     intents: [
       GatewayIntentBits.Guilds,

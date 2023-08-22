@@ -40,10 +40,14 @@ module.exports = (client) => async (msg) => {
     ]);
     conn.release();
 
-    client.log(`[${client.userMapping.get(userId).username}][${client.guildMapping.get(guildId).name}] Added sound ${name}.`);
+    client.log(`[${client.userMapping.get(userId).username}] [${client.guildMapping.get(guildId).name}] Added sound ${name}.`);
 
     // Add sound to soundMapping
-    client.soundMapping.set(soundMsg.id, { id: res[0].id, name });
+    client.soundMapping.set(soundMsg.id, {
+      id: res[0].id,
+      guildId,
+      name,
+    });
 
     // Download and save file
     const response = await fetch(sound);

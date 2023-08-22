@@ -6,7 +6,7 @@ const {
 module.exports = (client) => ({
   data: new SlashCommandBuilder()
     .setName('setchannel')
-    .setDescription('Set the channel you want Soundboard Bot to use.')
+    .setDescription('Set the channel you want Soundboard Bot to use')
     .addChannelOption((option) => option
       .setName('channel')
       .addChannelTypes(ChannelType.GuildText)

@@ -6,7 +6,7 @@ module.exports = (client) => ({
     .setName('soundboard')
     .setDescription('Play specific sound')
     .addStringOption((option) => option
-      .setName('name')
+      .setName('soundboard')
       .setDescription('Play specified soundboard')
       .setAutocomplete(true)
       .setRequired(true)),
@@ -30,7 +30,7 @@ module.exports = (client) => ({
     const { playSound } = utils(client);
     await interaction.deferReply({ ephemeral: true });
 
-    const messageId = interaction.options.getString('name');
+    const messageId = interaction.options.getString('soundboard');
     const user = await client.users.fetch(interaction.user.id);
 
     if (!client.soundMapping.has(messageId)) return interaction.reply('Soundboard was not found');

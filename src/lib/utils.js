@@ -1,4 +1,5 @@
 const fs = require('fs/promises');
+const crypto = require('crypto');
 const path = require('path');
 const mariadb = require('mariadb');
 const { joinVoiceChannel, createAudioResource, createAudioPlayer } = require('@discordjs/voice');
@@ -50,7 +51,7 @@ module.exports = (client) => {
 
     const resource = createAudioResource(path.join(__dirname, '..', '..', 'sounds', `${client.soundMapping.get(messageId).id}.mp3`));
     client.player.get(guildId).play(resource);
-    client.log(`[${client.userMapping.get(userId).username}][${client.guildMapping.get(guildId).name}] Played sound ${client.soundMapping.get(messageId).name}.`);
+    client.log(`[${username}] [${client.guildMapping.get(guildId).name}] Played sound ${client.soundMapping.get(messageId).name}.`);
 
     // Push to history array
     client.history.push([
@@ -89,8 +90,10 @@ module.exports = (client) => {
     }
   }
 
-  async function deleteSound(client, soundMsgId) {
-    const sound = client.soundMapping.get(soundMsgId);
+  async function deleteSound(client, {
+    messageId, guildId, username,
+  }) {
+    const sound = client.soundMapping.get(messageId);
     const conn = await client.db.getConnection();
 
     // Delete sound file
@@ -98,9 +101,9 @@ module.exports = (client) => {
 
     // Remove entry from db and soundMapping
     await conn.query('DELETE FROM sound WHERE id = ?', [sound.id]);
-    client.soundMapping.delete(soundMsgId);
+    client.soundMapping.delete(messageId);
     conn.release();
-    client.log(`Deleted sound ${sound.name}.`);
+    client.log(`[${username}] [${client.guildMapping.get(guildId).name}] Deleted sound ${sound.name}.`);
   }
 
   async function syncHistory() {
@@ -112,6 +115,11 @@ module.exports = (client) => {
     client.history = [];
   }
 
+  function generateRandomHex(length) {
+    const bytes = Math.ceil(length / 2);
+    return crypto.randomBytes(bytes).toString('hex').slice(0, length);
+  }
+
   return {
     log,
     db,
@@ -120,5 +128,6 @@ module.exports = (client) => {
     deleteSound,
     reconnectVc,
     syncHistory,
+    generateRandomHex,
   };
 };

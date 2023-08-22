@@ -42,10 +42,11 @@ module.exports = async (client) => {
   client.log(`Loaded ${client.userMapping.size} user${client.userMapping.size === 1 ? '' : 's'}`);
 
   client.log('Loading soundMapping');
-  const sounds = await conn.query('SELECT id, name, message_id from sound');
+  const sounds = await conn.query('SELECT s.id AS id, g.discord_id AS guild_id, s.name, message_id from sound s JOIN guild g ON (g.id = s.guild_id)');
   sounds.forEach((sound) => {
     client.soundMapping.set(sound.message_id, {
       id: sound.id,
+      guildId: sound.guild_id,
       name: sound.name,
     });
   });

@@ -18,7 +18,7 @@ module.exports = (client) => async (interaction) => {
   }
 
   if (!interaction.isChatInputCommand()) return;
-  client.log(`[${username}][${guildName}] Ran command ${interaction.commandName}.`);
+  client.log(`[${username}] [${guildName}] Ran command ${interaction.commandName}.`);
 
   const command = client.commands.get(interaction.commandName);
   if (!command) return;

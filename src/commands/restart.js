@@ -3,7 +3,7 @@ const { SlashCommandBuilder } = require('discord.js');
 module.exports = (client) => ({
   data: new SlashCommandBuilder()
     .setName('restart')
-    .setDescription('Restart the soundboard if it\'s not working.'),
+    .setDescription('Restart the soundboard if it\'s not working'),
 
   async execute(interaction) {
     const { guildId } = interaction;
