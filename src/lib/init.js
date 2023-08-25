@@ -1,7 +1,6 @@
-const fs = require('fs');
+const fs = require('fs-extra');
 const path = require('path');
 const NodeCache = require('node-cache');
-const { exec } = require('child_process');
 const { version } = require('../../package.json');
 const utils = require('./utils');
 
@@ -10,20 +9,32 @@ module.exports = async (client) => {
 
   client.db = db;
   client.log = log();
+  client.log(`Initializing Soundboard Bot version ${version}`);
+
+  // Guild voice connections
   client.vc = new Map();
+
+  // Player associated with each guild
   client.player = new Map();
+
+  // Timeout for disconnecting after configured amount of time
   client.timeout = new Map();
+
   client.guildMapping = new Map();
   client.userMapping = new Map();
   client.soundMapping = new Map();
+
+  // Determine when to delete cached sounds
   client.cache = new NodeCache({
     stdTTL: 3600,
-  });
-  client.cache.on('expired', async (key) => {
-    await fs.promises.unlink(path.join(__dirname, '..', '..', 'cache', `${key}.mp3`));
-  });
+  })
+    .on('expired', async (key) => {
+      await fs.promises.unlink(path.join(__dirname, '..', '..', 'cache', `${key}.mp3`));
+    });
 
-  client.log(`Initializing Soundboard Bot version ${version}`);
+  // Clear cache directory before start
+  client.log('Clearing cache on init');
+  fs.emptyDirSync(path.join(__dirname, '..', '..', 'cache'));
 
   client.log('Loading guildMapping');
   const conn = await db.getConnection();
@@ -60,9 +71,6 @@ module.exports = async (client) => {
     });
   });
   client.log(`Loaded ${client.soundMapping.size} sound${client.soundMapping.size === 1 ? '' : 's'}`);
-
-  client.log('Clearing cache on init');
-  exec('rm /app/cache/*', () => {});
 
   conn.release();
 };
