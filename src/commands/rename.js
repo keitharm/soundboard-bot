@@ -1,4 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
+const utils = require('../lib/utils');
 
 module.exports = (client) => ({
   data: new SlashCommandBuilder()
@@ -15,29 +16,36 @@ module.exports = (client) => ({
       .setRequired(true)),
 
   async autocomplete(interaction) {
+    const { getGuild } = utils(client);
     const focusedValue = interaction.options.getFocused();
 
     const conn = await client.db.getConnection();
     const results = await conn.query('SELECT name, message_id FROM sound WHERE guild_id = ? AND name LIKE ? ORDER BY name LIMIT 25', [
-      client.guildMapping.get(interaction.guildId).id,
+      (await getGuild(interaction.guildId)).id,
       `%${focusedValue}%`,
     ]);
     conn.release();
 
     await interaction.respond(
-      results.map((result) => ({ name: result.name, value: String(result.message_id) })),
+      results.map((result) => ({
+        name: result.name,
+        value: String(result.message_id),
+      })),
     );
   },
 
   async execute(interaction) {
+    const { getGuild, getSound } = utils(client);
     await interaction.deferReply({ ephemeral: true });
 
     const { guildId } = interaction;
     const messageId = interaction.options.getString('soundboard');
     const newName = interaction.options.getString('name').slice(0, 255);
-    const isUnique = ![...client.soundMapping.values()].find((s) => s.guildId === guildId && s.name === newName);
 
-    if (!client.soundMapping.has(messageId)) return interaction.editReply('Invalid soundboard provided');
+    const conn = await client.db.getConnection();
+    const isUnique = (await conn.query('SELECT COUNT(*) as total FROM sound WHERE guild_id = ? AND name = ?', [(await getGuild(guildId)).id, newName]))[0].total === 0n;
+
+    if (!await getSound(messageId)) return interaction.editReply('Invalid soundboard provided');
 
     if (isUnique) {
       const conn = await client.db.getConnection();
@@ -47,16 +55,14 @@ module.exports = (client) => ({
         newName,
         messageId,
       ]);
+
       conn.release();
 
-      // Update local entry
-      client.soundMapping.set(messageId, {
-        ...client.soundMapping.get(messageId),
-        name: newName,
-      });
+      // Invalidate cache
+      client.cache.del(`s-${messageId}`);
 
       // Update message text
-      const soundboardChannelId = client.guildMapping.get(guildId).soundboard;
+      const soundboardChannelId = (await getGuild(guildId)).soundboard;
       const soundboardChannel = await client.channels.fetch(soundboardChannelId);
       const message = await soundboardChannel.messages.fetch(messageId);
       message.edit(newName);

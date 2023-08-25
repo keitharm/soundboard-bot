@@ -81,5 +81,6 @@ if (!DISCORD_TOKEN) process.exit('Discord Bot token missing');
     client.on(Events.GuildDelete, client.events.get('GuildDelete')(client));
     client.on(Events.InteractionCreate, client.events.get('InteractionCreate')(client));
     client.on(Events.MessageCreate, client.events.get('MessageCreate')(client));
+    client.on(Events.MessageUpdate, client.events.get('MessageCreate')(client, true));
   }
 })();

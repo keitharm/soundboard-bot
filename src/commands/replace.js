@@ -1,10 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { createWriteStream } = require('fs');
-const { pipeline } = require('stream');
-const { promisify } = require('util');
-const path = require('path');
-
-const streamPipeline = promisify(pipeline);
+const utils = require('../lib/utils');
 
 module.exports = (client) => ({
   data: new SlashCommandBuilder()
@@ -21,30 +16,36 @@ module.exports = (client) => ({
       .setRequired(true)),
 
   async autocomplete(interaction) {
-    const focusedValue = interaction.options.getFocused();
+    const { getGuild } = utils(client);
 
+    const { guildId } = interaction;
+    const focusedValue = interaction.options.getFocused();
     const conn = await client.db.getConnection();
     const results = await conn.query('SELECT name, message_id FROM sound WHERE guild_id = ? AND name LIKE ? ORDER BY name LIMIT 25', [
-      client.guildMapping.get(interaction.guildId).id,
+      (await getGuild(guildId)).id,
       `%${focusedValue}%`,
     ]);
     conn.release();
 
     await interaction.respond(
-      results.map((result) => ({ name: result.name, value: String(result.message_id) })),
+      results.map((result) => ({
+        name: result.name,
+        value: String(result.message_id),
+      })),
     );
   },
 
   async execute(interaction) {
+    const { getGuild, getSound } = utils(client);
     await interaction.deferReply({ ephemeral: true });
 
     const { guildId } = interaction;
     const soundboard = interaction.options.getString('soundboard');
     const newSoundMsgId = interaction.options.getString('message_id');
 
-    if (!client.soundMapping.has(soundboard)) return interaction.editReply('Invalid soundboard provided.');
+    if (!await getSound(soundboard)) return interaction.editReply('Invalid soundboard provided.');
 
-    const uploadChannelId = client.guildMapping.get(guildId).upload;
+    const uploadChannelId = (await getGuild(guildId)).upload;
     const uploadChannel = await client.channels.fetch(uploadChannelId);
 
     let message;
@@ -57,13 +58,20 @@ module.exports = (client) => ({
     if (!sound) return interaction.editReply('No sound file attachment was found for provided message_id.');
     if (sound.slice(-4) !== '.mp3') return interaction.editReply('Only MP3 files are supported.');
 
-    // Update src of db record
     const conn = await client.db.getConnection();
+    const unused = (await conn.query('SELECT COUNT(*) as total FROM sound WHERE src = ?', [sound]))[0].total === 0n;
+    if (!unused) return interaction.editReply('Replacement sound is already being used by another soundboard.');
+
+    // Update sound src
     await conn.query('UPDATE sound SET src = ? WHERE message_id = ?', [
       sound,
       soundboard,
     ]);
     conn.release();
+
+    // Invalidate cache
+    client.cache.del(`s-${soundboard}`);
+    client.cache.del(`f-${soundboard}`);
 
     await interaction.editReply('Updated soundboard successfully!');
   },

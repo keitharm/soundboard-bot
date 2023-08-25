@@ -5,6 +5,6 @@ module.exports = (client) => async (guild) => {
 
   client.log(`Deleted guild ${guild.name}.`);
 
-  // Remove guild from guildMapping
-  client.guildMapping.delete(res[0].discord_id);
+  // Invalidate cache
+  client.cache.del(`g-${res[0].discord_id}`);
 };

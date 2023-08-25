@@ -17,6 +17,9 @@ module.exports = (client) => ({
       .setRequired(true)),
 
   async autocomplete(interaction) {
+    const { getGuild } = utils(client);
+
+    const { guildId } = interaction;
     const conn = await client.db.getConnection();
 
     let other;
@@ -27,19 +30,22 @@ module.exports = (client) => ({
       other = interaction.options.getString('soundboard_1');
     }
     const results = (await conn.query('SELECT name, message_id FROM sound WHERE guild_id = ? AND name LIKE ? ORDER BY name LIMIT 25', [
-      client.guildMapping.get(interaction.guildId).id,
+      (await getGuild(guildId)).id,
       `%${focusedOption.value}%`,
     ])).filter((result) => result.message_id !== other);
 
     conn.release();
 
     await interaction.respond(
-      results.map((result) => ({ name: result.name, value: String(result.message_id) })),
+      results.map((result) => ({
+        name: result.name,
+        value: String(result.message_id),
+      })),
     );
   },
 
   async execute(interaction) {
-    const { generateRandomHex } = utils(client);
+    const { generateRandomHex, getGuild, getSound } = utils(client);
     await interaction.deferReply({ ephemeral: true });
 
     const { guildId } = interaction;
@@ -47,7 +53,7 @@ module.exports = (client) => ({
     const soundboard2 = interaction.options.getString('soundboard_2');
 
     // If user provided valid/different options
-    if (client.soundMapping.has(soundboard1) && client.soundMapping.has(soundboard2) && soundboard1 !== soundboard2) {
+    if (await getSound(soundboard1) && await getSound(soundboard2) && soundboard1 !== soundboard2) {
       const conn = await client.db.getConnection();
       const sounds = await conn.query('SELECT message_id, name, id FROM sound WHERE message_id IN (?, ?)', [
         soundboard1,
@@ -70,14 +76,11 @@ module.exports = (client) => ({
       conn.release();
 
       // Update local entry and messages in soundboard channel
-      const soundboardChannelId = client.guildMapping.get(guildId).soundboard;
+      const soundboardChannelId = (await getGuild(guildId)).soundboard;
       const soundboardChannel = await client.channels.fetch(soundboardChannelId);
       await Promise.all(sounds.map(async (sound) => {
-        client.soundMapping.set(sound.message_id, {
-          ...client.soundMapping.get(sound.message_id),
-          id: sound.id,
-          name: sound.name,
-        });
+        // Invalidate cache
+        client.cache.del(`s-${sound.message_id}`);
 
         const message = await soundboardChannel.messages.fetch(sound.message_id);
         await message.edit(sound.name);

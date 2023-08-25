@@ -14,6 +14,7 @@ module.exports = (client) => ({
       .setRequired(true)),
 
   async execute(interaction) {
+    const { guildId } = interaction;
     const channel = interaction.options.getChannel('channel');
     await interaction.deferReply({ ephemeral: true });
 
@@ -50,23 +51,19 @@ Go to <#${thread.id}> to add new soundboards. React to ❌ to stop current sound
       await thread.send(`To add a new soundboard with an associated name, upload an mp3 file and provide the name as your message body.
 If you want to upload a sound file for use in another command (e.g. replacing a previous soundboard), upload a file with no message body and reference the uploaded file by right clicking and copying its id.`);
     }
-    await interaction.editReply(`Set Soundboard channel to <#${channel.id}>. ${!oldThread ? `Created new <#${thread.id}> thread in channel for adding new soundboards.` : `Skipped thread creation since <#${thread.id}> already exists.`}`);
 
     const conn = await client.db.getConnection();
     await conn.query('UPDATE guild SET soundboard_channel = ?, upload_thread = ?, welcome_message = ? WHERE discord_id = ?', [
       channel.id,
       thread.id,
       welcomeMsg.id,
-      interaction.guildId,
+      guildId,
     ]);
     conn.release();
 
-    client.guildMapping.set(interaction.guildId, {
-      soundboard: channel.id,
-      upload: thread.id,
-      welcome: welcomeMsg.id,
-      id: client.guildMapping.get(interaction.guildId).id,
-      name: client.guildMapping.get(interaction.guildId).name,
-    });
+    // Invalidate cache
+    client.cache.del(`g-${guildId}`);
+
+    await interaction.editReply(`Set Soundboard channel to <#${channel.id}>. ${!oldThread ? `Created new <#${thread.id}> thread in channel for adding new soundboards.` : `Skipped thread creation since <#${thread.id}> already exists.`}`);
   },
 });
