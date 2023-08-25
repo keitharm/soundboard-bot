@@ -13,7 +13,7 @@ services:
     networks:
       - soundboard-bot
     volumes:
-      - ./sounds:/app/sounds
+      - ./cache:/app/cache
 
   db:
     image: mariadb

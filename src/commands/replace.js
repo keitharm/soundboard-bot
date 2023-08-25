@@ -65,9 +65,6 @@ module.exports = (client) => ({
     ]);
     conn.release();
 
-    // Download and save file
-    const response = await fetch(sound);
-    await streamPipeline(response.body, createWriteStream(path.join(__dirname, '..', '..', 'sounds', `${client.soundMapping.get(soundboard).id}.mp3`)));
     await interaction.editReply('Updated soundboard successfully!');
   },
 });

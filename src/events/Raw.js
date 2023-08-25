@@ -33,15 +33,12 @@ module.exports = (client) => async (packet) => {
 
   // Check if deleted a soundboard message
   } else if (packet.t === 'MESSAGE_DELETE') {
-    const validSound = client.soundMapping.has(packet.d.message_id);
-    const user = await client.users.fetch(packet.d.user_id);
+    const validSound = client.soundMapping.has(packet.d.id);
 
     if (validSound) {
       await deleteSound(client, {
-        messageId: packet.d.message_id,
+        messageId: packet.d.id,
         guildId: packet.d.guild_id,
-        userId: packet.d.user_id,
-        username: user.username,
       });
     }
   }

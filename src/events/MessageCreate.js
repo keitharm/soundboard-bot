@@ -1,21 +1,23 @@
-const { createWriteStream } = require('fs');
-const { pipeline } = require('stream');
-const { promisify } = require('util');
-const path = require('path');
 const utils = require('../lib/utils');
-
-const streamPipeline = promisify(pipeline);
 
 module.exports = (client) => async (msg) => {
   const { checkUser } = utils(client);
 
-  // Ignore messages from bots and messages not in the upload thread
-  if (msg.author.bot || msg.channel.id !== client.guildMapping.get(msg.guildId).upload) return;
+  // Ignore messages from bots
+  if (msg.author.bot) return;
 
   const name = msg.content.trim();
   const guildId = msg.guild.id;
   const sound = msg.attachments?.first()?.attachment ?? null;
   const { id: userId, username } = msg.author;
+
+  // If message not from soundboard and is in the soundboard channel, delete it
+  if (client.user.id !== userId && msg.channel.id === client.guildMapping.get(msg.guildId).soundboard) {
+    setTimeout(() => msg.delete(), 5000);
+  }
+
+  // Ignore messages not in the upload thread
+  if (msg.channel.id !== client.guildMapping.get(msg.guildId).upload) return;
 
   // No attachments
   if (!sound) return;
@@ -47,11 +49,9 @@ module.exports = (client) => async (msg) => {
       id: res[0].id,
       guildId,
       name,
+      src: sound,
     });
 
-    // Download and save file
-    const response = await fetch(sound);
-    await streamPipeline(response.body, createWriteStream(path.join(__dirname, '..', '..', 'sounds', `${res[0].id}.mp3`)));
     await soundMsg.react('🔈');
     await msg.channel.send(`Added \`${name}\` to <#${client.guildMapping.get(guildId).soundboard}> successfully!`);
   }

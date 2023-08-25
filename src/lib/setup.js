@@ -1,19 +1,27 @@
-const { CronJob } = require('cron');
+const fs = require('fs');
+const path = require('path');
+const NodeCache = require('node-cache');
+const { exec } = require('child_process');
 const { version } = require('../../package.json');
 const utils = require('./utils');
 
 module.exports = async (client) => {
-  const { log, db, syncHistory } = utils(client);
+  const { db, log } = utils(client);
 
+  client.db = db;
+  client.log = log();
   client.vc = new Map();
   client.player = new Map();
   client.timeout = new Map();
   client.guildMapping = new Map();
   client.userMapping = new Map();
   client.soundMapping = new Map();
-  client.db = db;
-  client.log = log();
-  client.history = [];
+  client.cache = new NodeCache({
+    stdTTL: 3600,
+  });
+  client.cache.on('expired', async (key) => {
+    await fs.promises.unlink(path.join(__dirname, '..', '..', 'cache', `${key}.mp3`));
+  });
 
   client.log(`Initializing Soundboard Bot version ${version}`);
 
@@ -42,27 +50,19 @@ module.exports = async (client) => {
   client.log(`Loaded ${client.userMapping.size} user${client.userMapping.size === 1 ? '' : 's'}`);
 
   client.log('Loading soundMapping');
-  const sounds = await conn.query('SELECT s.id AS id, g.discord_id AS guild_id, s.name, message_id from sound s JOIN guild g ON (g.id = s.guild_id)');
+  const sounds = await conn.query('SELECT s.id AS id, g.discord_id AS guild_id, s.name, s.src, message_id from sound s JOIN guild g ON (g.id = s.guild_id)');
   sounds.forEach((sound) => {
     client.soundMapping.set(sound.message_id, {
       id: sound.id,
       guildId: sound.guild_id,
       name: sound.name,
+      src: sound.src,
     });
   });
   client.log(`Loaded ${client.soundMapping.size} sound${client.soundMapping.size === 1 ? '' : 's'}`);
 
-  conn.release();
+  client.log('Clearing cache on init');
+  exec('rm /app/cache/*', () => {});
 
-  // Cron jobs
-  client.jobs = {
-    // Push latest history stats to db
-    syncHistory: new CronJob(
-      '0 * * * * *',
-      syncHistory,
-      null,
-      true,
-      'America/Chicago',
-    ),
-  };
+  conn.release();
 };
