@@ -8,6 +8,7 @@ module.exports = (client, edited = false) => async (_msg) => {
   const { guildId } = _msg;
   const { id: userId, username } = _msg.author;
   const sound = _msg.attachments?.first()?.attachment ?? null;
+  const filename = _msg.attachments?.first()?.name;
 
   // Ignore messages from bots
   if (_msg.author.bot) return;
@@ -23,8 +24,11 @@ module.exports = (client, edited = false) => async (_msg) => {
     }, 5000);
   }
 
+  // No attachments
+  if (!sound) return;
+
   let msg;
-  // We manually refetch the message since Discord doesn't update the content of a a message during a MessageUpdate event for some reason
+  // We manually refetch the message since Discord doesn't update the content of a message during a MessageUpdate event for some reason
   if (edited) {
     const soundboardChannelId = (await getGuild(guildId)).upload;
     const soundboardChannel = await client.channels.fetch(soundboardChannelId);
@@ -46,16 +50,13 @@ module.exports = (client, edited = false) => async (_msg) => {
   // Ignore messages not in the upload thread
   if (msg.channel.id !== (await getGuild(guildId)).upload) return;
 
-  // No attachments
-  if (!sound) return;
-
   // Add user to db if not found
   await checkUser(userId, username);
 
   // Attachment with text = new sound
   if (sound && name.length !== 0) {
     // Reject non-mp3 files
-    if (sound.slice(-4) !== '.mp3') return msg.channel.send('Only MP3 files are supported');
+    if (filename.slice(-4) !== '.mp3') return msg.channel.send('Only MP3 files are supported');
 
     const conn = await client.db.getConnection();
 
@@ -74,7 +75,7 @@ module.exports = (client, edited = false) => async (_msg) => {
       ]);
       conn.release();
 
-      client.log(`[${(await getUser(userId)).username}] [${(await getGuild(guildId)).name}] Added sound ${name}.`);
+      client.log(`[${(await getUser(userId)).username}] [${(await getGuild(guildId)).name}] Added sound ${filename}.`);
 
       await soundMsg.react('🔈');
       await msg.channel.send(`Added \`${name}\` to <#${(await getGuild(guildId)).soundboard}> successfully!`);
