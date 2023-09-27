@@ -8,15 +8,16 @@ services:
       MARIADB_DATABASE: soundboard-bot
       MARIADB_USER: soundboard-bot
       MARIADB_PASSWORD: my_cool_secret
+      #MODE: deploy
     depends_on:
       - db
     networks:
       - soundboard-bot
     volumes:
-      - ./cache:/app/cache
+      - cache:/app/cache
 
   db:
-    image: mariadb
+    image: mariadb:11.1.2-jammy
     restart: unless-stopped
     environment:
       MARIADB_DATABASE: soundboard-bot
@@ -31,7 +32,7 @@ services:
       - ./config/mariadb:/docker-entrypoint-initdb.d
 
   phpmyadmin:
-    image: phpmyadmin
+    image: phpmyadmin:5.2.1-apache
     restart: unless-stopped
     ports:
       - 8080:80
@@ -49,3 +50,5 @@ networks:
 volumes:
   db:
     name: soundboard-bot-db
+  cache:
+    name: soundboard-bot-cache
