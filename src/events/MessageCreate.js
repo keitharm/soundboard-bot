@@ -73,7 +73,6 @@ module.exports = (client, edited = false) => async (_msg) => {
         name,
         sound,
       ]);
-      conn.release();
 
       client.log(`[${(await getUser(userId)).username}] [${(await getGuild(guildId)).name}] Added sound ${filename}.`);
 
@@ -82,5 +81,7 @@ module.exports = (client, edited = false) => async (_msg) => {
     } else {
       await msg.channel.send(`\`${name}\` is already in use, please edit your previous sound upload message https://discord.com/channels/${guildId}/${msg.channel.id}/${msg.id} with a unique name.`);
     }
+
+    conn.release();
   }
 };

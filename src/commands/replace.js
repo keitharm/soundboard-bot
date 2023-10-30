@@ -55,8 +55,9 @@ module.exports = (client) => ({
       return interaction.editReply('Invalid message_id provided.');
     }
     const sound = message.attachments?.first()?.attachment ?? null;
+    const filename = message.attachments?.first()?.name;
     if (!sound) return interaction.editReply('No sound file attachment was found for provided message_id.');
-    if (sound.slice(-4) !== '.mp3') return interaction.editReply('Only MP3 files are supported.');
+    if (filename.slice(-4) !== '.mp3') return interaction.editReply('Only MP3 files are supported.');
 
     const conn = await client.db.getConnection();
     const unused = (await conn.query('SELECT COUNT(*) as total FROM sound WHERE src = ?', [sound]))[0].total === 0n;

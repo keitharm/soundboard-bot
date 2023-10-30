@@ -48,15 +48,11 @@ module.exports = (client) => ({
     if (!await getSound(messageId)) return interaction.editReply('Invalid soundboard provided');
 
     if (isUnique) {
-      const conn = await client.db.getConnection();
-
       // Update sound entry in db
       await conn.query('UPDATE sound SET name = ? WHERE message_id = ?', [
         newName,
         messageId,
       ]);
-
-      conn.release();
 
       // Invalidate cache
       client.cache.del(`s-${messageId}`);
@@ -71,5 +67,7 @@ module.exports = (client) => ({
     } else {
       await interaction.editReply('Soundboard names must be unique.');
     }
+
+    conn.release();
   },
 });
