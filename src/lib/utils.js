@@ -136,7 +136,7 @@ module.exports = (client) => {
 
     const conn = await client.db.getConnection();
     const res = await conn.query('SELECT id, name, soundboard_channel AS soundboard, upload_thread AS upload, welcome_message AS welcome FROM guild WHERE discord_id = ?', [discordId]);
-    client.cache.set(key, res[0]);
+    if (res[0]) client.cache.set(key, res[0]);
     conn.release();
 
     return res[0] ?? null;
@@ -153,7 +153,7 @@ module.exports = (client) => {
 
     const conn = await client.db.getConnection();
     const res = await conn.query('SELECT id, name, src, guild_id AS guildId FROM sound WHERE message_id = ?', [messageId]);
-    client.cache.set(key, res[0]);
+    if (res[0]) client.cache.set(key, res[0]);
     conn.release();
 
     return res[0] ?? null;
@@ -170,7 +170,7 @@ module.exports = (client) => {
 
     const conn = await client.db.getConnection();
     const res = await conn.query('SELECT id, username FROM user WHERE discord_id = ?', [discordId]);
-    client.cache.set(key, res[0]);
+    if (res[0]) client.cache.set(key, res[0]);
     conn.release();
 
     return res[0] ?? null;
