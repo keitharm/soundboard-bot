@@ -60,12 +60,13 @@ module.exports = (client) => ({
     if (filename.slice(-4) !== '.mp3') return interaction.editReply('Only MP3 files are supported.');
 
     const conn = await client.db.getConnection();
-    const unused = (await conn.query('SELECT COUNT(*) as total FROM sound WHERE src = ?', [sound]))[0].total === 0n;
+    const unused = (await conn.query('SELECT COUNT(*) as total FROM sound WHERE upload_id = ?', [message.id]))[0].total === 0n;
     if (!unused) return interaction.editReply('Replacement sound is already being used by another soundboard.');
 
     // Update sound src
-    await conn.query('UPDATE sound SET src = ? WHERE message_id = ?', [
+    await conn.query('UPDATE sound SET src = ?, upload_id = ? WHERE message_id = ?', [
       sound,
+      message.id,
       soundboard,
     ]);
     conn.release();

@@ -12,11 +12,17 @@ const {
   DISCORD_CLIENT_ID,
   MODE = 'standard',
 } = process.env;
-if (!DISCORD_TOKEN) process.exit('Discord Bot token missing');
+if (!DISCORD_TOKEN) {
+  console.error('Discord Bot token missing');
+  process.exit(1);
+}
 
 (async () => {
   if (MODE === 'deploy') {
-    if (!DISCORD_CLIENT_ID) process.exit('Discord client id missing');
+    if (!DISCORD_CLIENT_ID) {
+      console.error('Discord Bot token missing');
+      process.exit(2);
+    }
     await deployCommands();
     console.log('Application commands refreshed, please restart the app with mode unset from \'deploy\'.');
     return;

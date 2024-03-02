@@ -81,6 +81,7 @@ module.exports = (client) => ({
       await Promise.all(sounds.map(async (sound) => {
         // Invalidate cache
         client.cache.del(`s-${sound.message_id}`);
+        client.cache.del(`f-${sound.message_id}`);
 
         const message = await soundboardChannel.messages.fetch(sound.message_id);
         await message.edit(sound.name);

@@ -37,7 +37,7 @@ module.exports = (client, edited = false) => async (_msg) => {
     // Check if we've already processed this uploaded sound by seeing if the attachment src id is already in the db.
     // If we have, just ignore the message.
     const conn = await client.db.getConnection();
-    const unused = (await conn.query('SELECT COUNT(*) as total FROM sound WHERE src = ?', [sound]))[0].total === 0n;
+    const unused = (await conn.query('SELECT COUNT(*) as total FROM sound WHERE upload_id = ?', [msg.id]))[0].total === 0n;
     conn.release();
 
     if (!unused) return;
@@ -66,9 +66,10 @@ module.exports = (client, edited = false) => async (_msg) => {
     if (isUnique) {
       // Post new message into soundboard channel and save to db
       const soundMsg = await (await msg.guild.channels.fetch((await getGuild(guildId)).soundboard)).send(name);
-      await conn.query('INSERT INTO sound (guild_id, message_id, user_id, name, src) VALUES (?, ?, ?, ?, ?) RETURNING id', [
+      await conn.query('INSERT INTO sound (guild_id, message_id, upload_id, user_id, name, src) VALUES (?, ?, ?, ?, ?, ?) RETURNING id', [
         (await getGuild(guildId)).id,
         soundMsg.id,
+        msg.id,
         (await getUser(userId)).id,
         name,
         sound,

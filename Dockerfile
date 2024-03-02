@@ -15,7 +15,7 @@ RUN npm prune --prod
 FROM node:20-alpine AS base
 
 # Prevent node/npm being run as PID 1
-RUN apk add --no-cache dumb-init
+RUN apk add --no-cache dumb-init su-exec
 ENTRYPOINT ["dumb-init"]
 
 ENV PATH $PATH:./node_modules/.bin
@@ -36,5 +36,7 @@ LABEL org.opencontainers.image.source https://github.com/keitharm/soundboard-bot
 COPY --chown=node --from=deps /app/node_modules ./node_modules
 COPY --chown=node . .
 RUN rm -rf ./test package-lock.json .eslintrc.json
-USER node
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["node", "./src/index.js"]

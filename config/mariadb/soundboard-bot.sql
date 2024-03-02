@@ -61,6 +61,7 @@ CREATE TABLE `sound` (
   `id` int(11) NOT NULL,
   `guild_id` int(11) NOT NULL,
   `message_id` varchar(20) NOT NULL,
+  `upload_id` varchar(20) NOT NULL,
   `user_id` int(11) NOT NULL,
   `name` varchar(64) NOT NULL,
   `src` varchar(255) NOT NULL

@@ -55,8 +55,38 @@ module.exports = (client) => {
       // Refresh ttl
       client.cache.ttl(`f-${messageId}`);
     } else {
+      const sound = await getSound(messageId);
       // Download and save file
-      const response = await fetch((await getSound(messageId)).src);
+      let response = await fetch(sound.src);
+
+      // Old url has expired, refetch from the message and update db/cache
+      if (response.status !== 200) {
+        const uploadChannelId = (await getGuild(guildId)).upload;
+        const uploadChannel = await client.channels.fetch(uploadChannelId);
+
+        let message;
+        try {
+          message = await uploadChannel.messages.fetch(sound.upload_id);
+        } catch (err) {
+          console.error(err);
+          console.log('Unable to find message associated with soundboard');
+        }
+        const updatedSound = message.attachments?.first()?.attachment ?? null;
+
+        // Update sound src
+        const conn = await client.db.getConnection();
+        await conn.query('UPDATE sound SET src = ? WHERE message_id = ?', [
+          updatedSound,
+          messageId,
+        ]);
+        conn.release();
+
+        // Invalidate cache
+        client.cache.del(`s-${messageId}`);
+        client.cache.del(`f-${messageId}`);
+
+        response = await fetch(updatedSound);
+      }
       await streamPipeline(response.body, createWriteStream(path.join(__dirname, '..', '..', 'cache', `${messageId}.mp3`)));
 
       // Set cache key
@@ -152,7 +182,7 @@ module.exports = (client) => {
     }
 
     const conn = await client.db.getConnection();
-    const res = await conn.query('SELECT id, name, src, guild_id AS guildId FROM sound WHERE message_id = ?', [messageId]);
+    const res = await conn.query('SELECT id, name, src, upload_id, guild_id AS guildId FROM sound WHERE message_id = ?', [messageId]);
     if (res[0]) client.cache.set(key, res[0]);
     conn.release();
 
