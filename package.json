@@ -1,6 +1,6 @@
 {
   "name": "soundboard-bot",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "main": "src/index.js",
   "dependencies": {
     "@discordjs/voice": "^0.16.0",

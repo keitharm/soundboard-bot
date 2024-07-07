@@ -17,17 +17,25 @@ module.exports = (client) => ({
     const { guildId } = interaction;
     const focusedValue = interaction.options.getFocused();
     const conn = await client.db.getConnection();
-    const results = await conn.query('SELECT name, message_id FROM sound WHERE guild_id = ? AND name LIKE ? ORDER BY name LIMIT 25', [
+    const allSounds = await conn.query('SELECT name, message_id FROM sound WHERE guild_id = ? ORDER BY name', [
       (await getGuild(guildId)).id,
-      `%${focusedValue}%`,
     ]);
     conn.release();
-
+    
+    const focusedWords = focusedValue.toLowerCase().split(' ');
+    
+    const filteredResults = allSounds.filter(result => {
+      const resultWords = result.name.toLowerCase().split(' ');
+      return focusedWords.every(focusedWord =>
+        resultWords.some(resultWord => resultWord.includes(focusedWord))
+      );
+    });
+    
     await interaction.respond(
-      results.map((result) => ({
+      filteredResults.map((result) => ({
         name: result.name,
         value: String(result.message_id),
-      })),
+      })).slice(0, 25),
     );
   },
 
