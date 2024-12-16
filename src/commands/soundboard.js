@@ -50,6 +50,7 @@ module.exports = (client) => ({
     if (!await getSound(messageId)) return interaction.reply('Soundboard was not found');
 
     try {
+      const { soundboard } = await getGuild(guildId);
       await playSound(client, {
         messageId,
         guildId,
@@ -57,7 +58,7 @@ module.exports = (client) => ({
         username: user.username,
       });
 
-      await interaction.editReply('Played soundboard');
+      await interaction.editReply(`Played soundboard https://discord.com/channels/${guildId}/${soundboard}/${messageId}`);
     } catch (err) {
       await interaction.editReply('Please join a voice channel before playing a soundboard.');
     }

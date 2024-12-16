@@ -32,7 +32,12 @@ module.exports = (client, edited = false) => async (_msg) => {
   if (edited) {
     const soundboardChannelId = (await getGuild(guildId)).upload;
     const soundboardChannel = await client.channels.fetch(soundboardChannelId);
-    msg = await soundboardChannel.messages.fetch(_msg.id);
+
+    try {
+      msg = await soundboardChannel.messages.fetch(_msg.id);
+    } catch (err) {
+      client.log('Refetched message was not found.')
+    }
 
     // Check if we've already processed this uploaded sound by seeing if the attachment src id is already in the db.
     // If we have, just ignore the message.
