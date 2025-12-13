@@ -1,6 +1,6 @@
 #        dependencies
 # -------------------------
-FROM node:20-alpine AS deps
+FROM node:22-alpine AS deps
 
 WORKDIR /app
 COPY package*.json ./
@@ -12,7 +12,7 @@ RUN npm prune --prod
 
 #           base
 # -------------------------
-FROM node:20-alpine AS base
+FROM node:22-alpine AS base
 
 # Prevent node/npm being run as PID 1
 RUN apk add --no-cache dumb-init su-exec
