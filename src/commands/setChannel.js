@@ -1,6 +1,6 @@
 const {
   SlashCommandBuilder, ChannelType, PermissionsBitField,
-  ThreadAutoArchiveDuration,
+  ThreadAutoArchiveDuration, MessageFlags,
 } = require('discord.js');
 
 module.exports = (client) => ({
@@ -16,7 +16,7 @@ module.exports = (client) => ({
   async execute(interaction) {
     const { guildId } = interaction;
     const channel = interaction.options.getChannel('channel');
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     if (!interaction.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
       return interaction.editReply('You must be an administrator to run this command.');

@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 
 module.exports = (client) => ({
   data: new SlashCommandBuilder()
@@ -8,7 +8,7 @@ module.exports = (client) => ({
   async execute(interaction) {
     const { guildId } = interaction;
 
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     client.player.get(guildId)?.stop();
     await interaction.editReply('Stopped soundboard playback');
   },

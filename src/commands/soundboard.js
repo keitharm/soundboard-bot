@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const utils = require('../lib/utils');
 
 module.exports = (client) => ({
@@ -40,9 +40,9 @@ module.exports = (client) => ({
   },
 
   async execute(interaction) {
-    const { playSound, getSound } = utils(client);
+    const { playSound, getSound, getGuild } = utils(client);
 
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     const { guildId } = interaction;
     const messageId = interaction.options.getString('soundboard');
     const user = await client.users.fetch(interaction.user.id);
@@ -60,6 +60,7 @@ module.exports = (client) => ({
 
       await interaction.editReply(`Played soundboard https://discord.com/channels/${guildId}/${soundboard}/${messageId}`);
     } catch (err) {
+      console.error(err);
       await interaction.editReply('Please join a voice channel before playing a soundboard.');
     }
   },

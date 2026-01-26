@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const utils = require('../lib/utils');
 
 module.exports = (client) => ({
@@ -46,7 +46,7 @@ module.exports = (client) => ({
 
   async execute(interaction) {
     const { generateRandomHex, getGuild, getSound } = utils(client);
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     const { guildId } = interaction;
     const soundboard1 = interaction.options.getString('soundboard_1');
